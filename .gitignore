@@ -1,0 +1,36 @@
+# Byte-compiled/compiled files
+*.elc
+eln-cache/
+
+# Auto-save, backup, and lock files
+*~
+#*
+.#*
+init.el.backup
+
+# Package directories and caches
+elpa/
+auto-save-list/
+.cask/
+.cache/
+transient/
+straight/
+
+# Session and state files
+.mc-lists.el
+cursory-latest-state.eld
+eshell/
+history
+projectile-bookmarks.eld
+projects
+recentf
+
+# Local customizations
+custom.el
+
+# Tree-sitter artifacts
+tree-sitter/
+
+# Project specific
+url/
+whatever-tmp/
