@@ -485,6 +485,49 @@ than `split-width-threshold'."
   (when-let* ((key (vc-state file backend)))
     (prot-modeline--vc-get-face key)))
 
+(declare-function vc-refresh-state "vc-hooks" (&optional file dont-write-history))
+(declare-function vc-file-clearprops "vc-hooks" (file))
+(declare-function vc-root-dir "vc-hooks" (&optional file))
+
+(defun prot-modeline--buffer-root-directory ()
+  "Return expanded default directory for the current buffer.
+This falls back to the directory of `buffer-file-name'."
+  (cond
+   (buffer-file-name
+    (file-name-directory (expand-file-name buffer-file-name)))
+   (default-directory
+    (file-name-as-directory (expand-file-name default-directory)))))
+
+(defun prot-modeline-refresh-vc-buffers (root)
+  "Refresh VC data for buffers that live under ROOT.
+ROOT should be the top-level directory of the repository."
+  (let ((root (file-name-as-directory (expand-file-name root)))
+        (updated nil))
+    (dolist (buffer (buffer-list))
+      (when (buffer-live-p buffer)
+        (with-current-buffer buffer
+          (when-let* ((dir (prot-modeline--buffer-root-directory)))
+            (when (string-prefix-p root (file-name-as-directory dir))
+              (setq updated t)
+              (when-let* ((file buffer-file-name))
+                (ignore-errors
+                  (vc-file-clearprops file)
+                  (vc-refresh-state file)))
+              (force-mode-line-update))))))
+    (when updated
+      (force-mode-line-update t))))
+
+(defun prot-modeline-refresh-vc (&optional directory)
+  "Force-refresh VC state for buffers under DIRECTORY.
+When called interactively, use `vc-root-dir' as the default BASE.
+With prefix argument, prompt for DIRECTORY."
+  (interactive
+   (when current-prefix-arg
+     (list (read-directory-name "Refresh VC buffers under: " nil nil t))))
+  (let ((root (or directory (vc-root-dir) default-directory)))
+    (when root
+      (prot-modeline-refresh-vc-buffers root))))
+
 (defvar-local prot-modeline-vc-branch
     '(:eval
       (when-let* (((mode-line-window-selected-p))
@@ -495,6 +538,17 @@ than `split-width-threshold'."
                   (face (prot-modeline--vc-face file backend)))
         (prot-modeline--vc-details file branch face)))
   "Mode line construct to return propertized VC branch.")
+
+(with-eval-after-load 'magit
+  (declare-function magit-toplevel "magit-git" (&optional directory))
+
+  (defun prot-modeline--magit-refresh-vc (&rest _)
+    "Refresh the modeline branch when Magit updates the checkout."
+    (when-let* ((root (magit-toplevel)))
+      (prot-modeline-refresh-vc-buffers root)))
+
+  (add-hook 'magit-post-checkout-hook #'prot-modeline--magit-refresh-vc)
+  (add-hook 'magit-post-refresh-hook #'prot-modeline--magit-refresh-vc))
 
 ;;;; Flymake errors, warnings, notes
 

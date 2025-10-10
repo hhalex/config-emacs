@@ -16,25 +16,40 @@
   :ensure nil
   :init
   (setq which-func-unknown "–"
-        which-func-display 'header
+        which-func-display nil
         which-func-modes '(prog-mode)
         which-func-non-auto-modes '(lisp-interaction-mode))
   :config
+  (defface my/which-func-header-face
+    '((t :inherit header-line
+         :height 0.9
+         :box (:line-width -1 :color "gray35")))
+    "Face used for the which-function header line.")
+
   (which-function-mode 1)
 
-  (with-eval-after-load 'which-func
-    (defun my/disable-which-func-header ()
-      ;; Prevent header injection in scratch-style buffers.
-      (setq-local which-func-mode nil)
-      (when (boundp 'which-func--use-header-line)
-        (setq-local which-func--use-header-line nil))
-      (setq-local header-line-format nil))
+  (defun my/which-func-header-string ()
+    (when (bound-and-true-p which-func-mode)
+      (let* ((label (or (which-function) which-func-unknown))
+             (text (cond
+                    ((stringp label) label)
+                    (label (format "%s" label))
+                    (t which-func-unknown)))
+             (content (format "  %s  " text))
+             (face 'my/which-func-header-face)
+             (width (max 0 (- (window-body-width) (string-width content))))
+             (padding (make-string width ? )))
+        (concat (propertize content 'face face)
+                (propertize padding 'face face)))))
 
-    (add-hook 'lisp-interaction-mode-hook #'my/disable-which-func-header)
+  (defun my/setup-which-func-header ()
+    ;; Present a compact which-function readout at the top of code buffers.
+    (if (eq major-mode 'lisp-interaction-mode)
+        (kill-local-variable 'header-line-format)
+      (setq-local header-line-format
+                  '((which-function-mode (:eval (my/which-func-header-string)))))))
 
-    (when-let ((scratch (get-buffer "*scratch*")))
-      (with-current-buffer scratch
-        (my/disable-which-func-header)))))
+  (add-hook 'prog-mode-hook #'my/setup-which-func-header))
 
 (require 'prot-common)
 (require 'prot-modeline)
