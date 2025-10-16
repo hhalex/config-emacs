@@ -18,10 +18,16 @@
 (with-eval-after-load 'modus-themes
   (defun my-diff-hl-modus-pastel ()
     (modus-themes-with-colors
-      (custom-set-faces
-       `(diff-hl-change ((t (:background ,bg-changed :foreground ,bg-changed))))
-       `(diff-hl-insert ((t (:background ,bg-added  :foreground ,bg-added))))
-       `(diff-hl-delete ((t (:background ,bg-removed :foreground ,bg-removed)))))))
+      (let ((added green-faint)
+            (changed yellow-faint)
+            (removed red-faint))
+        (custom-set-faces
+         `(diff-hl-change ((t (:background ,changed :foreground ,changed))))
+         `(diff-hl-insert ((t (:background ,added :foreground ,added))))
+         `(diff-hl-delete ((t (:background ,removed :foreground ,removed))))
+         `(diff-hl-margin-change ((t (:background ,changed :foreground ,changed))))
+         `(diff-hl-margin-insert ((t (:background ,added :foreground ,added))))
+         `(diff-hl-margin-delete ((t (:background ,removed :foreground ,removed))))))))
   (my-diff-hl-modus-pastel)
   (when (boundp 'enable-theme-functions)
     (add-hook 'enable-theme-functions

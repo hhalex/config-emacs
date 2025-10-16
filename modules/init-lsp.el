@@ -5,6 +5,8 @@
 (use-package eglot
   :hook ((prog-mode . eglot-ensure)
          (noir-ts-mode . eglot-ensure))
+  :custom
+  (eglot-code-action-indications nil)
   :config
   (add-hook 'before-save-hook
             (lambda ()
@@ -22,6 +24,8 @@
                             (my/rust-eglot-init-options))))))
 
 (with-eval-after-load 'eglot
+  (require 'subr-x)
+  (require 'cl-lib)
   (dolist (entry '((typescript-ts-mode . ("typescript-language-server" "--stdio"))
                    (tsx-ts-mode        . ("typescript-language-server" "--stdio"))
                    (js-ts-mode         . ("typescript-language-server" "--stdio"))
@@ -30,7 +34,99 @@
                    (html-ts-mode       . ("vscode-html-language-server" "--stdio"))
                    (noir-ts-mode       . ("nargo" "lsp"))))
     ;; Ensure Eglot knows which language servers to spawn for tree-sitter modes.
-    (add-to-list 'eglot-server-programs entry)))
+    (add-to-list 'eglot-server-programs entry))
+
+  (defun my/eglot--import-action-title-p (title)
+    "Return non-nil when TITLE appears to be an import-related code action."
+    (and title
+         (let ((case-fold-search t))
+           (string-match-p (rx (or string-start (not letter))
+                               (group-n 1 "import")
+                               (or string-end (not letter)))
+                           title))))
+
+  (defun my/eglot--decorate-action-title (title)
+    "Return a display string for TITLE, highlighting imports in yellow."
+    (let ((copy (copy-sequence (or title ""))))
+      (if (my/eglot--import-action-title-p copy)
+          (propertize copy 'face '(:inherit warning :weight semi-bold))
+        copy)))
+
+  (defun my/eglot--arrange-code-actions (actions)
+    "Return menu items prioritizing import ACTIONS with decorated titles."
+    (let (imports others)
+      (dolist (action actions)
+        (let* ((title (plist-get action :title))
+               (display (my/eglot--decorate-action-title title))
+               (cell (cons display action)))
+          (if (my/eglot--import-action-title-p title)
+              (push cell imports)
+            (push cell others))))
+      (append (nreverse imports) (nreverse others))))
+
+  (defun my/eglot--read-execute-code-action (orig actions server &optional action-kind)
+    "Priority wrapper for `eglot--read-execute-code-action' to sort imports.
+Applies `warning' face to import actions."
+    (declare (ignore orig))
+    (let* ((menu-items (or (my/eglot--arrange-code-actions actions)
+                           (apply #'eglot--error
+                                  (if action-kind
+                                      `("No \"%s\" code actions here" ,action-kind)
+                                    '("No code actions here")))))
+           (preferred-action (cl-find-if
+                              (lambda (menu-item)
+                                (plist-get (cdr menu-item) :isPreferred))
+                              menu-items))
+           (default-action (car (or preferred-action (car menu-items))))
+           (chosen
+           (if (and action-kind (null (cadr menu-items)))
+               (cdr (car menu-items))
+             (if (listp last-nonmenu-event)
+                  (x-popup-menu
+                   last-nonmenu-event
+                   `("Eglot code actions:"
+                     ("dummy" ,@menu-items)))
+                (cdr (assoc (completing-read
+                             (format "[eglot] Pick an action (default %s): "
+                                     (substring-no-properties default-action))
+                             menu-items nil t nil nil default-action)
+                            menu-items))))))
+      (when chosen
+        (eglot-execute server chosen))))
+
+  (advice-add 'eglot--read-execute-code-action :around #'my/eglot--read-execute-code-action)
+
+  (defun my/eglot--highlight-types (doc)
+    "Apply type-oriented faces to DOC without altering its text content."
+    (when (and doc (not (string-empty-p doc)))
+      (let ((text (copy-sequence doc))
+            (case-fold-search nil)
+            (pos 0))
+        ;; Highlight types appearing after colon.
+        (while (string-match
+                "\\(?:\\sw\\|[]})>]\\)\\s-*:\\s-*\\([^,)\n;]+\\)" text pos)
+          (add-face-text-property (match-beginning 1) (match-end 1)
+                                  'font-lock-type-face t text)
+          (setq pos (match-end 1)))
+        ;; Highlight return types after arrows like \"=>\" or \"->\".
+        (setq pos 0)
+        (while (string-match
+                "\\(?:=>\\|->\\)\\s-*\\([^,)\n;]+\\)" text pos)
+          (add-face-text-property (match-beginning 1) (match-end 1)
+                                  'font-lock-type-face t text)
+          (setq pos (match-end 1)))
+        ;; Emphasize common primitive names wherever they occur.
+        (dolist (word '("string" "number" "boolean" "void" "null" "undefined"
+                        "any" "never" "unknown" "Promise" "Result" "Option"))
+          (setq pos 0)
+          (while (string-match (concat "\\_<" word "\\_>") text pos)
+            (add-face-text-property (match-beginning 0) (match-end 0)
+                                    'font-lock-type-face t text)
+            (setq pos (match-end 0))))
+        text)))
+
+  (advice-add 'eglot--hover-info :filter-return #'my/eglot--highlight-types)
+  (advice-add 'eglot--sig-info :filter-return #'my/eglot--highlight-types))
 
 (defun my/eglot-ts-init-options ()
   '(:typescript
