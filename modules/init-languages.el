@@ -65,5 +65,19 @@
 (use-package noir-ts-mode
   :mode "\\.nr\\'")
 
+(use-package hcl-mode
+  :mode ("\\.hcl\\'" "terragrunt\\.hcl\\'")
+  :hook ((hcl-mode . display-line-numbers-mode)
+         (hcl-mode . electric-pair-mode)
+         (hcl-mode . eglot-ensure)))
+
+(use-package terraform-mode
+  :mode ("\\.tf\\'" "\\.tfvars\\'")
+  :hook ((terraform-mode . display-line-numbers-mode)
+         (terraform-mode . electric-pair-mode)
+         (terraform-mode . eglot-ensure))
+  :custom
+  (terraform-indent-level 2))
+
 (provide 'init-languages)
 ;;; init-languages.el ends here

@@ -32,8 +32,10 @@
                    (json-ts-mode       . ("vscode-json-language-server" "--stdio"))
                    (css-ts-mode        . ("vscode-css-language-server" "--stdio"))
                    (html-ts-mode       . ("vscode-html-language-server" "--stdio"))
-                   (noir-ts-mode       . ("nargo" "lsp"))))
-    ;; Ensure Eglot knows which language servers to spawn for tree-sitter modes.
+                   (noir-ts-mode       . ("nargo" "lsp"))
+                   (terraform-mode     . ("terraform-ls" "serve"))
+                   (hcl-mode           . ("terraform-ls" "serve"))))
+    ;; Ensure Eglot knows which language servers to spawn for our modes.
     (add-to-list 'eglot-server-programs entry))
 
   (defun my/eglot--import-action-title-p (title)
@@ -173,6 +175,9 @@ Applies `warning' face to import actions."
         '("prettier" "--stdin-filepath" filepath))
   (dolist (mode '(typescript-ts-mode tsx-ts-mode js-ts-mode json-ts-mode css-ts-mode html-ts-mode))
     (add-to-list 'apheleia-mode-alist (cons mode 'prettier)))
+  (setf (alist-get 'terraformfmt apheleia-formatters)
+        '("terraform" "fmt" "-"))
+  (add-to-list 'apheleia-mode-alist '(terraform-mode . terraformfmt))
   (setq apheleia-remote-algorithm 'local))
 
 (use-package eslintd-fix
