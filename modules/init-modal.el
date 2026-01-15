@@ -72,6 +72,7 @@
      '("j" . meow-join)
      '("d" . meow-kill)
      '("y" . meow-save)
+     '("Y" . meow-clipboard-save)
      '("P" . meow-clipboard-yank)
      '("p" . meow-yank)
      '("/" . meow-visit)
@@ -103,6 +104,14 @@
             (lambda ()
               (when (meow-insert-mode-p)
                 (meow-normal-mode)))))
+
+(with-eval-after-load 'dired
+  (define-key dired-mode-map (kbd "q") #'kill-current-buffer)
+  (define-key dired-mode-map (kbd "Q") #'my-delete-other-windows-and-kill-minibuffer))
+
+(with-eval-after-load 'magit
+  (define-key magit-mode-map (kbd "q") #'kill-current-buffer)
+  (define-key magit-mode-map (kbd "Q") #'my-delete-other-windows-and-kill-minibuffer))
 
 (provide 'init-modal)
 ;;; init-modal.el ends here
