@@ -12,7 +12,8 @@
         pulsar-region-face 'pulsar-cyan
         pulsar-highlight-face 'pulsar-magenta)
   ;; Pulse after `pulsar-pulse-region-functions'.
-  (setq pulsar-pulse-region-functions pulsar-pulse-region-common-functions)
+  (when (boundp 'pulsar-pulse-region-common-functions)
+    (setq pulsar-pulse-region-functions pulsar-pulse-region-common-functions))
   :hook
   ;; There are convenience functions/commands which pulse the line using
   ;; a specific colour: `pulsar-pulse-line-red' is one of them.
