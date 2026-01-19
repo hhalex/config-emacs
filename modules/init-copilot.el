@@ -4,7 +4,8 @@
 
 (use-package copilot
   :straight (:host github :repo "copilot-emacs/copilot.el" :files ("*.el"))
-  :hook (prog-mode . copilot-mode)
+  :hook ((prog-mode . copilot-mode)
+         (git-commit-mode . copilot-mode))
   :config
   (define-key copilot-completion-map (kbd "<backtab>") #'copilot-accept-completion-by-word)
   (dolist (k '("TAB" "<tab>"))
