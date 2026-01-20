@@ -509,7 +509,7 @@ ROOT should be the top-level directory of the repository."
           (when-let* ((dir (prot-modeline--buffer-root-directory)))
             (when (string-prefix-p root (file-name-as-directory dir))
               (setq updated t)
-              (when-let* ((file buffer-file-name))
+              (let ((file (or buffer-file-name dir)))
                 (ignore-errors
                   (vc-file-clearprops file)
                   (vc-refresh-state file)))
