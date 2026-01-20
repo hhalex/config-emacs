@@ -25,6 +25,7 @@
                   init-ui
                   init-completion
                   init-editor
+                  init-dired
                   init-languages
                   init-lsp
                   init-projects

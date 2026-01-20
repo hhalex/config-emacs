@@ -5,6 +5,34 @@
 (use-package magit
   :defer t)
 
+(use-package git-commit
+  :straight nil
+  :ensure nil
+  :after magit
+  :bind (:map git-commit-mode-map
+              ("C-c C-d" . my-git-commit-insert-staged-diff))
+  :config
+  (declare-function magit-git-string "magit-git" (&rest args))
+
+  (defun my-git-commit-insert-staged-diff (&optional full)
+    "Insert commented staged diff to help Copilot suggest messages.
+With prefix argument FULL, insert the full patch instead of a summary."
+    (interactive "P")
+    (let* ((args (if full
+                     '("diff" "--cached")
+                   '("diff" "--cached" "--stat" "--shortstat")))
+           (diff (apply #'magit-git-string args))
+           (prefix (or comment-start "# ")))
+      (if (and diff (string-match-p "\\S-" diff))
+          (save-excursion
+            (goto-char (point-max))
+            (unless (bolp)
+              (insert "\n"))
+            (insert prefix "Copilot context: staged diff\n")
+            (dolist (line (split-string diff "\n"))
+              (insert prefix line "\n")))
+        (message "No staged changes to insert.")))))
+
 (use-package diff-hl
   :hook ((prog-mode . diff-hl-mode)
          (dired-mode . diff-hl-dired-mode)
