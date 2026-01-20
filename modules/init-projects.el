@@ -50,10 +50,11 @@
   :config
   (setq neo-theme (if (display-graphic-p) 'nerd-icons 'arrow)
         neo-smart-open t
-        neo-autorefresh t
+        neo-autorefresh nil
         neo-window-fixed-size t
         neo-window-width 30
         neo-window-position 'left)
+  (define-key neotree-mode-map (kbd "g") #'neotree-refresh)
   (global-set-key [f8] #'neotree-toggle)
   (custom-set-faces
    '(neo-root-dir-face      ((t (:inherit font-lock-keyword-face :weight semi-bold))))
@@ -73,9 +74,6 @@
    '(neo-vc-unregistered-face ((t (:inherit shadow))))
    '(neo-vc-ignored-face    ((t (:inherit shadow))))
    '(neo-vc-uptodate-face   ((t (:inherit success))))))
-
-(use-package nerd-icons-dired
-  :hook (dired-mode . nerd-icons-dired-mode))
 
 (defun neotree-project-dir ()
   "Ouvrir NeoTree à la racine du projet courant."
