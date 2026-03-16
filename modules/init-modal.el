@@ -122,6 +122,7 @@
 (with-eval-after-load 'magit
   (define-key magit-mode-map (kbd "q") #'kill-current-buffer)
   (define-key magit-mode-map (kbd "Q") #'my-delete-other-windows-and-kill-minibuffer)
+  (define-key magit-mode-map [escape] (lookup-key global-map (kbd "M-g")))
   (define-key magit-mode-map (kbd "M-S-<left>") #'my/meow-jump-back)
   (define-key magit-mode-map (kbd "M-S-<right>") #'my/meow-jump-forward))
 
