@@ -26,6 +26,16 @@
   (unless (meow-insert-mode-p)
     (meow-insert)))
 
+(defun my/meow-jump-back ()
+  "Jump backward using better-jumper."
+  (interactive)
+  (better-jumper-jump-backward))
+
+(defun my/meow-jump-forward ()
+  "Jump forward using better-jumper."
+  (interactive)
+  (better-jumper-jump-forward))
+
 (use-package meow
   :config
   (defun meow-setup ()
@@ -89,8 +99,8 @@
      '(";" . comment-line)
      '("M-<up>" . backward-up-list)
      '("M-S-<up>" . meow-block)
-     '("M-S-<left>" . meow-pop-to-mark)
-     '("M-S-<right>" . meow-unpop-to-mark)
+     '("M-S-<left>" . my/meow-jump-back)
+     '("M-S-<right>" . my/meow-jump-forward)
      '("M-RET" . xref-find-definitions)
      '("<backspace>" . my/meow-backspace-and-insert)
      '("RET" . my/meow-newline-and-insert)
@@ -111,7 +121,9 @@
 
 (with-eval-after-load 'magit
   (define-key magit-mode-map (kbd "q") #'kill-current-buffer)
-  (define-key magit-mode-map (kbd "Q") #'my-delete-other-windows-and-kill-minibuffer))
+  (define-key magit-mode-map (kbd "Q") #'my-delete-other-windows-and-kill-minibuffer)
+  (define-key magit-mode-map (kbd "M-S-<left>") #'my/meow-jump-back)
+  (define-key magit-mode-map (kbd "M-S-<right>") #'my/meow-jump-forward))
 
 (provide 'init-modal)
 ;;; init-modal.el ends here

@@ -34,6 +34,63 @@
 (savehist-mode 1)
 (recentf-mode 1)
 
+(use-package better-jumper
+  :config
+  (setq better-jumper-context 'window
+        better-jumper-use-evil-jump-advice t
+        better-jumper-add-jump-behavior 'replace)
+  (setq better-jumper-disabled-modes
+        (delq 'magit-mode better-jumper-disabled-modes))
+  (better-jumper-mode 1)
+  (defun my/better-jumper-set-jump (&rest _)
+    "Record a jump point for cross-buffer navigation."
+    (better-jumper-set-jump))
+  (dolist (fn '(xref-find-definitions
+                xref-find-references
+                xref-go-back
+                xref-go-forward
+                magit-status
+                consult-line
+                consult-ripgrep
+                consult-grep
+                consult-imenu
+                consult-goto-line
+                consult-buffer
+                avy-goto-char
+                avy-goto-char-2
+                avy-goto-word-1
+                avy-goto-line
+                beginning-of-buffer
+                end-of-buffer
+                beginning-of-defun
+                end-of-defun
+                forward-paragraph
+                backward-paragraph
+                outline-next-visible-heading
+                outline-previous-visible-heading
+                next-error
+                previous-error
+                imenu
+                recenter-top-bottom
+                mouse-set-point
+                mouse-set-region
+                mouse-drag-region
+                switch-to-buffer
+                other-window))
+    (when (fboundp fn)
+      (advice-add fn :before #'my/better-jumper-set-jump)))
+  (add-hook 'isearch-mode-hook #'better-jumper-set-jump)
+  (dolist (fn '(meow-search
+                meow-visit
+                meow-imenu
+                meow-insert
+                meow-append
+                meow-yank
+                meow-clipboard-yank
+                meow-pop-selection))
+    (when (fboundp fn)
+      (advice-add fn :before #'my/better-jumper-set-jump))))
+
 (dolist (dir '("~/.emacs.d/whatever-tmp/" "~/.emacs.d/tmp/backups/"))
   (make-directory (expand-file-name dir) t))
 
