@@ -1,6 +1,8 @@
 ;;; init.el --- Entry point -*- lexical-binding: t -*-
 
 (setq custom-file (expand-file-name "custom.el" user-emacs-directory))
+;; Keep the straight lockfile in the repo root for easy review and commits.
+(setq straight-profiles '((nil . "../../package-versions.el")))
 
 (defvar bootstrap-version)
 (let ((bootstrap-file
@@ -16,12 +18,12 @@
   (load bootstrap-file nil 'nomessage))
 
 (straight-use-package 'use-package)
-(setq straight-use-package-by-default t
-      use-package-always-ensure t)
+(setq straight-use-package-by-default t)
 
 (add-to-list 'load-path (expand-file-name "modules" user-emacs-directory))
 
 (dolist (module '(init-core
+                  init-packages
                   init-ui
                   init-completion
                   init-editor
