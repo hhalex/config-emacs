@@ -123,5 +123,14 @@
   :hook ((dockerfile-mode . display-line-numbers-mode)
          (dockerfile-mode . electric-pair-mode)))
 
+(use-package markdown-mode
+  :mode (("\\.md\\'"       . markdown-mode)
+         ("README\\.md\\'" . gfm-mode)
+         ("\\.markdown\\'"  . markdown-mode))
+  :hook ((markdown-mode . visual-line-mode))
+  :custom
+  (markdown-fontify-code-blocks-natively t)
+  (markdown-enable-math t))
+
 (provide 'init-languages)
 ;;; init-languages.el ends here
