@@ -21,6 +21,7 @@
   (exec-path-from-shell-initialize))
 
 (add-to-list 'exec-path (expand-file-name "~/.cargo/bin"))
+(add-to-list 'exec-path (expand-file-name "~/.local/bin"))
 
 (setq-default inhibit-startup-screen t)
 
