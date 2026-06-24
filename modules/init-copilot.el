@@ -2,10 +2,20 @@
 
 (eval-when-compile (require 'use-package))
 
+(defun my/copilot-safe-mode ()
+  "Enable `copilot-mode', tolerating a missing/unstartable language server.
+Without this guard a missing `copilot-language-server' aborts major-mode
+setup for every `prog-mode' buffer."
+  (condition-case err
+      (copilot-mode 1)
+    (error
+     (copilot-mode -1)
+     (message "Copilot disabled: %s" (error-message-string err)))))
+
 (use-package copilot
   :straight (:host github :repo "copilot-emacs/copilot.el" :files ("*.el"))
-  :hook ((prog-mode . copilot-mode)
-         (git-commit-mode . copilot-mode))
+  :hook ((prog-mode . my/copilot-safe-mode)
+         (git-commit-mode . my/copilot-safe-mode))
   :config
   (define-key copilot-completion-map (kbd "<backtab>") #'copilot-accept-completion-by-word)
   (dolist (k '("TAB" "<tab>"))
