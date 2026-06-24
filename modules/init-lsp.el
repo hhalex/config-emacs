@@ -4,7 +4,12 @@
 
 (use-package eglot
   :hook ((prog-mode . eglot-ensure)
-         (noir-ts-mode . eglot-ensure))
+         (noir-ts-mode . eglot-ensure)
+         ;; helm-template-mode derives from text-mode, so it misses the
+         ;; prog-mode hook; only attach when the helm_ls binary is present.
+         (helm-template-mode . (lambda ()
+                                 (when (executable-find "helm_ls")
+                                   (eglot-ensure)))))
   :custom
   (eglot-code-action-indications nil)
   :config
@@ -34,7 +39,8 @@
                    (html-ts-mode       . ("vscode-html-language-server" "--stdio"))
                    (noir-ts-mode       . ("nargo" "lsp"))
                    (terraform-mode     . ("terraform-ls" "serve"))
-                   (hcl-mode           . ("terraform-ls" "serve"))))
+                   (hcl-mode           . ("terraform-ls" "serve"))
+                   (helm-template-mode . ("helm_ls" "serve"))))
     ;; Ensure Eglot knows which language servers to spawn for our modes.
     (add-to-list 'eglot-server-programs entry))
 
@@ -66,10 +72,9 @@
             (push cell others))))
       (append (nreverse imports) (nreverse others))))
 
-  (defun my/eglot--read-execute-code-action (orig actions server &optional action-kind)
+  (defun my/eglot--read-execute-code-action (_orig actions server &optional action-kind)
     "Priority wrapper for `eglot--read-execute-code-action' to sort imports.
 Applies `warning' face to import actions."
-    (declare (ignore orig))
     (let* ((menu-items (or (my/eglot--arrange-code-actions actions)
                            (apply #'eglot--error
                                   (if action-kind

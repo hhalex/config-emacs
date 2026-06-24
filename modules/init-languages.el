@@ -58,6 +58,14 @@
 
 (use-package yaml-ts-mode
   :mode "\\.ya?ml\\'"
+  :init
+  ;; `yaml-ts-mode' is built-in but needs the tree-sitter grammar installed.
+  ;; The explicit `:mode' mapping bypasses treesit-auto's prompt, so register
+  ;; the source and compile it once on demand.
+  (add-to-list 'treesit-language-source-alist
+               '(yaml "https://github.com/ikatyang/tree-sitter-yaml"))
+  (unless (treesit-language-available-p 'yaml)
+    (treesit-install-language-grammar 'yaml))
   :hook ((yaml-ts-mode . corfu-mode))
   :custom
   (yaml-indent-offset 2))
@@ -78,6 +86,42 @@
          (terraform-mode . eglot-ensure))
   :custom
   (terraform-indent-level 2))
+
+;; Helm charts: Go templates ({{ ... }}) embedded in YAML. The tree-sitter
+;; YAML grammar flags the template delimiters as parse errors, so base the
+;; Helm mode on the classic regexp `yaml-mode' and layer Go-template
+;; highlighting on top, where `font-lock-add-keywords' works reliably.
+(use-package yaml-mode
+  ;; Loaded eagerly below so `helm-template-mode' (which derives from it) is
+  ;; defined before `auto-mode-alist' tries to resolve a template file.
+  :demand t
+  :config
+  (define-derived-mode helm-template-mode yaml-mode "Helm"
+    "Major mode for Helm chart templates (Go templates mixed with YAML)."
+    (font-lock-add-keywords
+     nil
+     '(("{{-?\\|-?}}" . font-lock-builtin-face)
+       ("{{-?[ \t]*\\(if\\|else\\|end\\|range\\|with\\|define\\|template\\|block\\|include\\|required\\|default\\|toYaml\\|toJson\\|nindent\\|indent\\|quote\\|printf\\|tpl\\)\\_>"
+        1 font-lock-keyword-face)
+       ("\\.\\(Values\\|Release\\|Chart\\|Files\\|Capabilities\\|Template\\|Subcharts\\)\\_>"
+        . font-lock-variable-name-face)
+       ("\\$[A-Za-z_][A-Za-z0-9_]*" . font-lock-variable-name-face))
+     'append))
+  ;; Loading yaml-mode (re)claims .yaml/.yml in `auto-mode-alist', shadowing
+  ;; our tree-sitter `yaml-ts-mode'. Strip those entries here, after the load,
+  ;; so yaml-ts-mode stays the default and yaml-mode only backs Helm templates.
+  (setq auto-mode-alist (rassq-delete-all 'yaml-mode auto-mode-alist))
+  (add-to-list 'auto-mode-alist '("\\.ya?ml\\'" . yaml-ts-mode)))
+
+;; Files under a chart's templates/ directory, plus Helm helper templates.
+(add-to-list 'auto-mode-alist
+             '("/templates/.*\\.\\(ya?ml\\|tpl\\)\\'" . helm-template-mode))
+(add-to-list 'auto-mode-alist '("_helpers\\.tpl\\'" . helm-template-mode))
+
+(use-package dockerfile-mode
+  :mode ("Dockerfile\\(?:\\..*\\)?\\'" "\\.dockerfile\\'")
+  :hook ((dockerfile-mode . display-line-numbers-mode)
+         (dockerfile-mode . electric-pair-mode)))
 
 (provide 'init-languages)
 ;;; init-languages.el ends here
