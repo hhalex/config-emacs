@@ -44,6 +44,18 @@
     ;; Ensure Eglot knows which language servers to spawn for our modes.
     (add-to-list 'eglot-server-programs entry))
 
+  ;; `dockerfile-mode' derives from `prog-mode', so the global
+  ;; `eglot-ensure' hook fires for Dockerfiles and tries to launch the
+  ;; built-in `docker-langserver' mapping, which we don't install. Drop
+  ;; that mapping so editing Dockerfiles stays LSP-free and quiet.
+  (setq eglot-server-programs
+        (seq-remove (lambda (entry)
+                      (let ((modes (car entry)))
+                        (if (listp modes)
+                            (memq 'dockerfile-mode modes)
+                          (eq modes 'dockerfile-mode))))
+                    eglot-server-programs))
+
   (defun my/eglot--import-action-title-p (title)
     "Return non-nil when TITLE appears to be an import-related code action."
     (and title

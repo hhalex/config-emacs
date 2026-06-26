@@ -23,7 +23,10 @@ setup for every `prog-mode' buffer."
   (add-hook 'minibuffer-setup-hook (lambda () (copilot-mode -1)))
   (add-to-list 'copilot-indentation-alist '(rust-mode 4))
   (add-to-list 'copilot-indentation-alist '(rust-ts-mode 4))
-  (add-to-list 'copilot-indentation-alist '(git-commit-mode 2))
+  ;; The magit commit buffer's major-mode is `text-mode' (git-commit-mode is
+  ;; only a minor mode), so key the indentation off text-mode to avoid
+  ;; `copilot--infer-indentation-offset' warnings there.
+  (add-to-list 'copilot-indentation-alist '(text-mode 2))
   (add-to-list 'copilot-indentation-alist '(emacs-lisp-mode 2))
   (add-to-list 'copilot-indentation-alist '(lisp-mode 2)))
 
